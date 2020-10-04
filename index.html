@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Amino Acids</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body {
+      background-color: white;
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      font-size: 200%;
+      text-align: center;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-backface-visibility: hidden;
+      -webkit-perspective: 1000;
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+
+    div {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    input {
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      font-size: 100%;
+      outline: 0;
+      border-width: 0 0 2px;
+      border-color: grey;
+      text-align: center;
+    }
+
+    input:focus {
+      border-color: dodgerblue;
+    }
+
+    .btn {
+      border: 2px solid black;
+      background-color: white;
+      color: black;
+      padding: 14px 28px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    .info {
+      border-color: #2196F3;
+      color: dodgerblue
+    }
+
+    p {
+      text-align: center;
+    }
+
+    .center {
+      display: flex;
+      height: 100vh;
+      flex-direction: column;
+      justify-content: center;
+      /*align-items: center;*/
+      align-items: stretch;
+    }
+
+    .answerCorrect {
+      color: green;
+    }
+
+    .answerWrong {
+      color: red;
+    }
+
+    .animateAnswerPart1 {
+      animation: showup 3s normal forwards;
+    }
+
+    .animateAnswerPart2 {
+      animation: showup2 3s normal forwards;
+    }
+
+
+    @keyframes showup {
+      0% {
+        opacity: 0;
+      }
+
+      20% {
+        opacity: 1;
+      }
+
+      80% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+      }
+    }
+
+    @keyframes showup2 {
+      0% {
+        opacity: 0;
+      }
+
+      20% {
+        opacity: 0;
+      }
+
+      40% {
+        opacity: 1;
+      }
+
+      80% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+      }
+    }
+
+
+  </style>
+</head>
+
+
+<body>
+
+  <div class="container center" id="main">
+
+    <div>
+      <h1>Amino Acids</h1>
+    </div>
+
+    <div>
+      <p>High Score: <span id="hiScore"></span></p>
+      <p>Score: <span id="currentScore"></span></p>
+    </div>
+    <div>
+      <span id="timer"></span>
+      <button id="startStop" class="btn info" onclick="javascript:onStartStopClick()">Start</button>
+    </div>
+    <div>
+      <p id="question">Question</p>
+    </div>
+
+    <div>
+      <input id="answerValue" onkeydown="javascript:onAnswerKeyPress(event)" placeholder="answer..."
+        type="text" />
+    </div>
+    <div><br></div>
+
+    <div>
+      <span id="answerResult" class="animateAnswerPart1"></span>
+      <span id="answerMessage" class="animateAnswerPart2"></span>
+    </div>
+
+  </div>
+
+
+  <script>
+
+
+    // Constants
+    const COUNTDOWN_SECS = 60;
+
+    const questionFields = {
+      QUESTION_TYPE: 0,
+      QUESTION_VALUE: 1,
+      ANSWER_TYPE: 2,
+      ANSWER_VALUE: 3
+    }
+
+    const stateType = {
+      READY: 0,
+      RUNNING: 1
+    }
+
+
+    // Module vars
+    var _currentQuestion = ['', '', ''];
+    var _currentScore = 0;
+    var _hiScore = 0;
+    var _answerResult = '';
+    var _answerMessage = '';
+    var _state = stateType.READY;
+    var _timeRemaining = COUNTDOWN_SECS;
+    var _timer;
+
+
+    // Start the timer
+    function start() {
+      clearResults();
+      _timer = window.setInterval(onTimer, 1000);
+      _state = stateType.RUNNING;
+      _timeRemaining = COUNTDOWN_SECS;
+      nextQuestion();
+      clearAnswer();
+      render();
+    }
+
+
+    // Stop the timer
+    function stop() {
+      window.clearTimeout(_timer);
+      _state = stateType.READY;
+      clearAnswer();
+      render();
+    }
+
+
+    // Reset and clear previous results
+    function clearResults() {
+      _currentQuestion = ['', '', ''];
+      _currentScore = 0;
+      _answerResult = ''
+      _answerMessage = ''
+      render();
+    }
+
+
+    // Finish
+    function finish() {
+      stop();
+      _timeRemaining = 0;
+
+      // Check if hi score
+      if (_currentScore > _hiScore) {
+        _answerResult = 'Congratulations!'
+        _answerMessage = 'A new high score!';
+        _hiScore = _currentScore;
+        render(restartAnswerAnimation = true);
+      } else {
+        render(restartAnswerAnimation = false);
+      }
+    }
+
+
+    // Timer event
+    function onTimer() {
+      _timeRemaining -= 1;
+      if (_timeRemaining <= 0) {
+        finish();
+      } else {
+        render();
+      }
+    }
+
+
+    // Update the UI
+    function render(restartAnswerAnimation = false) {
+
+      // Update time left
+      var elTimer = document.getElementById("timer");
+      if (_state == stateType.RUNNING) {
+        elTimer.innerHTML = _timeRemaining;
+      } else {
+        elTimer.innerHTML = "";
+      }
+
+      // Update start/stop button
+      var elStartStop = document.getElementById("startStop");
+      elStartStop.innerHTML = _state == stateType.RUNNING ? "Stop" : "Start";
+
+      // Set the question
+      var elQuestion = document.getElementById("question");
+      if (_state == stateType.RUNNING) {
+        elQuestion.innerHTML = "What is the <b>" + _currentQuestion[questionFields.ANSWER_TYPE].toLowerCase() + "</b>" +
+          " for <b>" + _currentQuestion[questionFields.QUESTION_VALUE] + "</b>?";
+      } else {
+        elQuestion.innerHTML = "Click start to begin!"
+      }
+        
+      // Set the answer status
+      var elAnswerResult = document.getElementById("answerResult");
+      elAnswerResult.innerHTML = _answerResult;
+      var elAnswerMessage = document.getElementById("answerMessage");
+      elAnswerMessage.innerHTML = _answerMessage;
+
+      // Restart answer animation
+      if (restartAnswerAnimation == true) {
+        elAnswerResult.classList.remove("animateAnswerPart1");
+        elAnswerResult.classList.remove("answerCorrect");
+        elAnswerResult.classList.remove("answerWrong");
+        elAnswerMessage.classList.remove("animateAnswerPart2");
+        elAnswerMessage.classList.remove("answerCorrect");
+        elAnswerMessage.classList.remove("answerWrong");
+        void elAnswerResult.offsetWidth; // trigger a DOM reflow
+        void elAnswerMessage.offsetWidth;
+        elAnswerResult.classList.add("animateAnswerPart1");
+        elAnswerMessage.classList.add("animateAnswerPart2");
+
+        if (_answerResult == "Wrong!") {
+          elAnswerResult.classList.add("answerWrong");
+          elAnswerMessage.classList.add("answerWrong");
+        } else if (_answerResult == "Correct!") {
+          elAnswerResult.classList.add("answerCorrect");
+          elAnswerMessage.classList.add("answerCorrect");
+        }
+      }
+
+      // Set the score
+      var elCurrentScore = document.getElementById("currentScore");
+      elCurrentScore.innerHTML = _currentScore.toString();
+      var elHiScore = document.getElementById("hiScore");
+      elHiScore.innerHTML = _hiScore.toString();
+
+    }
+
+
+    // Button handler
+    function onStartStopClick() {
+      switch (_state) {
+        case stateType.READY:
+          start();
+          break;
+        case stateType.RUNNING:
+          stop();
+          break;
+        default:
+          start();
+          break;
+      }
+    }
+
+
+    // Answer textbox handler
+    function onAnswerKeyPress(event) {
+
+      // Get answer if user hits return
+      var key = event.keyCode || event.which;
+      if (key == 13) {  // return      
+        var elAnswerTextbox = document.getElementById("answerValue");
+        submitAnswer(elAnswerTextbox.value);
+      }
+
+    }
+
+
+    // Submit an answer
+    function submitAnswer(answer) {
+
+      // Check state
+      if (_state != stateType.RUNNING) return;
+
+      // Standardise user and correct answer
+      answer = answer.trim().toLowerCase();
+      correct_answer = _currentQuestion[questionFields.ANSWER_VALUE].trim().toLowerCase();
+
+      if (answer == correct_answer) {
+        var score = calculateScore(_currentQuestion);
+        _answerResult = "Correct!";
+        _answerMessage = "+" + score.toString() + " points!";
+        _currentScore += score;
+        nextQuestion();
+
+      } else {
+        _answerResult = "Wrong!"
+        _answerMessage =
+          _answerMessage = "The " + _currentQuestion[questionFields.ANSWER_TYPE].toLowerCase() + "</b>" +
+          " for <b>" + _currentQuestion[questionFields.QUESTION_VALUE] + "</b>" +
+          " is <b>" + _currentQuestion[questionFields.ANSWER_VALUE] + "</b>";
+
+      }
+
+      // Clear and render
+      clearAnswer();
+      render(restartAnswerAnimation = true);
+    }
+
+
+    // Clear the answer input box
+    function clearAnswer() {
+      var elAnswer = document.getElementById("answerValue");
+      elAnswer.value = '';
+      elAnswer.focus();
+    }
+
+
+    // Calculuate score - 10 points per answer + number of characters
+    function calculateScore(currentQuestion) {
+      var answerValue = currentQuestion[questionFields.ANSWER_VALUE];
+      return 10 + answerValue.length;
+    }
+
+
+    // Return the data to select
+    function getQuestionList() {
+
+      return [
+        ["Aspartic acid", "Asp", "D"], // polar charged negative (acidic)
+        ["Glutamic acid", "Glu", "E"],
+        ["Arginine", "Arg", "R"], // polar charged positive (basic)
+        ["Lysine", "Lys", "K"],
+        ["Histidine", "His", "H"],
+        ["Asparagine", "Asn", "N"], // polar uncharged
+        ["Glutamine", "Gln", "Q"],
+        ["Serine", "Ser", "S"],
+        ["Threonine", "Thr", "T"],
+        ["Tyrosine", "Tyr", "Y"],
+        ["Alanine", "Ala", "A"], // nonpolar
+        ["Glycine", "Gly", "G"],
+        ["Valine", "Val", "V"],
+        ["Leucine", "Leu", "L"],
+        ["Isoleucine", "Ile", "I"],
+        ["Proline", "Pro", "P"],
+        ["Phenylalanine", "Phe", "F"],
+        ["Methionine", "Met", "M"],
+        ["Tryptophan", "Trp", "W"],
+        ["Cysteine", "Cys", "C"],
+      ];
+    }
+
+
+    // Properties of data in the list
+    // Should be same order as properties 
+    // returned by getList()
+    function getQuestionProperties() {
+      return [
+        "Name",
+        "Short code",
+        "Letter"
+      ]
+
+    }
+
+
+    // Next random random question
+    // [] of strings
+    //  [0]: Question Type
+    //  [1]: Question Value
+    //  [2]: Answer Type
+    //  [3]: Answer Value
+    function nextQuestion() {
+
+      // Get list of questions and properties
+      var questionList = getQuestionList();
+      var questionProperties = getQuestionProperties();
+
+      // Select a random record and question/answer properties
+      var iRecord = Math.floor(Math.random() * questionList.length);
+      var qType = Math.floor(Math.random() * questionProperties.length);
+      var aType = -1;
+      while (true) {
+        aType = Math.floor(Math.random() * questionProperties.length);
+        if (aType != qType) break; // ensure question/answer are not the same        
+      }
+
+      // Get string values
+      var qTypeName = questionProperties[qType];
+      var qValue = questionList[iRecord][qType];
+      var aTypeName = questionProperties[aType];
+      var aValue = questionList[iRecord][aType];
+
+      // Store
+      _currentQuestion = [qTypeName, qValue, aTypeName, aValue];
+
+    }
+
+
+    // Kick off
+    render();
+
+
+  </script>
+
+</body>
+</html>
