@@ -1,5 +1,7 @@
 # Amino Acids Quiz
-No-frills 60 second quiz to help learn the names and codes of amino acids.
+Simple 60 second quiz to help learn the names and codes of amino acids.
+
+https://cstraton.github.io/amino-acids-quiz
 
 ## Quick Start
 - Click Start to begin the timer
