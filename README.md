@@ -1,5 +1,5 @@
 # Amino Acids Quiz
-Simple 60 second quiz to help learn the names and codes of amino acids.
+A 60 second quiz to help learn the names and codes of amino acids.
 
 https://cstraton.github.io/amino-acids-quiz
 
